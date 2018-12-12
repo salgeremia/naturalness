@@ -53,7 +53,7 @@ public class Analyzer {
                 for (Element m : methods){
                     Map<String, String> parameters_map = get_parameters(m); // non lavora come dovrebbe
                     Map<String, String> method_var_map = get_method_var(m);
-                    m = preprocessing(m);
+                    Element method_cleaned = preprocessing(m);
                     
                     /*
                     PARSING BY VALE
