@@ -51,7 +51,7 @@ public class Analyzer {
                 methods.remove(0);
 
                 for (Element m : methods){
-                    Map<String, String> parameters_map = get_parameters(m); // non lavora come dovrebbe
+                    Map<String, String> parameters_map = get_parameters(m);
                     Map<String, String> method_var_map = get_method_var(m);
                     Element method_cleaned = preprocessing(m);
                     
@@ -175,17 +175,23 @@ public class Analyzer {
         return var_instance_map;
     }
       
-    private Map<String, String> get_parameters(Element method){ // da modificare
+    private Map<String, String> get_parameters(Element method){
         Map<String, String> parameters_map = new HashMap<>();
         Element decl = method.getElementsByTag("parameter_list").first();
         if (!decl.children().isEmpty()){
             Elements parameters = decl.select("parameter");
             for (Element p : parameters){
-//                System.out.println(p.select("decl > type > name").first().text() + 
-//                    " " + p.select("decl > name").first().text());
+                Element type_elem = p.select("decl > type > name").first();
+                String type_name;
+                if (type_elem.children().isEmpty()){
+                    type_name = type_elem.text();
+                } else {
+                    type_name = type_elem.select("name > name").first().text();
+                }
+                String var_name = p.select("decl > name").first().text();
+                parameters_map.put(type_name, var_name);
             }
-//            System.out.println();
-        } // else System.out.println("-");
+        }
         return parameters_map;
     }
     
