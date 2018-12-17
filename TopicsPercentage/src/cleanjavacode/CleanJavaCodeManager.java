@@ -16,6 +16,10 @@ import java.util.regex.Pattern;
 import cleanjavacode.JavaCodeAnalyzer;
 import cleanjavacode.FilterManager;
 import java.util.ArrayList;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 
 /**
@@ -77,7 +81,8 @@ public class CleanJavaCodeManager {
 //        }
 //    }
     
-    public void getWordClassJava(String pMethod) throws FileNotFoundException, IOException {
+    public ArrayList<String> getWordClassJava(String pMethod) throws FileNotFoundException, IOException {
+
         ArrayList<String> identifiersForFile = new ArrayList<String>();
         System.out.println("\nmethod: " + pMethod);
         pMethod = pMethod.replaceAll("[a-zA-Z_][a-zA-Z_0-9]*\\s*\\(", " ");
@@ -102,6 +107,8 @@ public class CleanJavaCodeManager {
         for (int j = 0; j < identifiersForFile.size(); j++) {
             System.out.println(identifiersForFile.get(j));
         }
+        
+        return identifiersForFile;
     }
     
     

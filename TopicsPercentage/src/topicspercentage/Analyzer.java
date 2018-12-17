@@ -5,7 +5,9 @@
  */
 package topicspercentage;
 
+import cleanjavacode.CleanJavaCodeManager;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,16 +29,17 @@ import org.jsoup.select.Elements;
 public class Analyzer {
     
     private static final String SRCML_PATH = "/usr/local/bin/srcml";
-    private static final File DATA_DIR = new File("/Users/Salvatore/Documents/UniMol/Dottorato/2018-2019/FSE/FSE_projects");
-    private static final File TOPICS_DIR = new File("/Users/Salvatore/Documents/UniMol/Dottorato/2018-2019/FSE/FSE_projects/api-list");
+    private static final File DATA_DIR = new File("/Users/sciroppina/NetBeansProjects/naturalness/FSE_projects");
+    private static final File TOPICS_DIR = new File("/Users/sciroppina/NetBeansProjects/naturalness/FSE_projects/api-list");
     
-    public void start(File java_file){
+    public int start(File java_file, int p_id_method){
         try {
             File temp_xml = new File(DATA_DIR + "/temp_class.xml");
             convert_to_xml(java_file, temp_xml);
             Document doc = Jsoup.parse(temp_xml, "UTF-8");
             Elements imports = doc.select("import > name");
             List<String> apis = merge_apis(TOPICS_DIR); 
+            Map<String, String> apis_topics = merge_apis_topics(TOPICS_DIR);
             if (match(imports, apis)){ // Is there at least one api?
                 Map<String, String> imports_map = new HashMap<>();
                 List<String> apis_path = get_apis_path(imports, apis);
@@ -49,7 +52,7 @@ public class Analyzer {
                 doc = Jsoup.parse(methods_file, "UTF-8");
                 Elements methods = doc.getElementsByTag("unit");
                 methods.remove(0);
-
+                Map<String, Integer> map_topics = create_map_topics();
                 for (Element m : methods){
                     Map<String, String> parameters_map = get_parameters(m);
                     Map<String, String> method_var_map = get_method_var(m);
@@ -58,10 +61,17 @@ public class Analyzer {
                     /*
                     PARSING BY VALE
                     */
+                    CleanJavaCodeManager cm = new CleanJavaCodeManager();
+                    ArrayList<String> identifiers = cm.getWordClassJava(method_cleaned.text());
+                    
                     
                     /*
                     CALCOLA PERCENTUALI
                     */
+                    System.out.println(p_id_method);
+                    write_method_file(m, methods_file, p_id_method); 
+                    p_id_method++;
+                    
                 }
                 
             } 
@@ -69,6 +79,7 @@ public class Analyzer {
         } catch (IOException ex) {
             Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
         }
+        return p_id_method;
     }
     
     private void convert_to_xml(File input, File output){
@@ -112,6 +123,18 @@ public class Analyzer {
             }
         }
         return apis;
+    }
+    
+    private Map<String, String> merge_apis_topics(File topics_dir) {
+        Map<String, String> apis_topics = new HashMap<String, String>();
+        for (File t : topics_dir.listFiles()) {
+            if(!t.isHidden()){
+               for (String a : get_apis(t)) {
+                    apis_topics.put(a, t.getName());
+                } 
+            }
+        }
+        return apis_topics;
     }
     
     private List<String> get_apis(File topic){
@@ -218,6 +241,31 @@ public class Analyzer {
         method.removeClass("literal");
         method.removeClass("type");
         return method;
+    }
+    
+    private void write_method_file(Element method, File path_method, int id) throws IOException {
+        String classname = path_method.getName();
+        classname = classname.replace(".xml", "");
+        String path_single_method = path_method.getParentFile().getPath();
+        File method_file = new File(path_single_method + "/" + classname + "_" + id + ".java");
+        System.out.println(method_file.getName());
+        FileWriter out = new FileWriter(method_file);
+        out.write(method.text());
+        out.close();
+    }
+    
+    private Map<String, Integer> create_map_topics() {
+        Map<String, Integer> temp = new HashMap<String, Integer>();
+        temp.put("collections", 0);
+        temp.put("files", 0);
+        temp.put("gui", 0);
+        temp.put("jdbc", 0);
+        temp.put("reflection", 0);
+        temp.put("servlet", 0);
+        temp.put("socket", 0);
+        temp.put("thread", 0);
+        temp.put("other", 0);
+        return temp;
     }
     
     public static void main(String[] args) throws IOException{        
