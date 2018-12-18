@@ -250,6 +250,10 @@ public class JavaCodeAnalyzer extends CodeAnalyzer {
 		keywords.add("native");
 		keywords.add("super");
 		keywords.add("while");
+                
+                // in my opinion (SALVATORE)
+                keywords.add("Override");
+                keywords.add("null");
 		
 		return keywords;
 	}

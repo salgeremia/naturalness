@@ -7,7 +7,10 @@ package topicspercentage;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -15,38 +18,26 @@ import java.util.List;
  */
 public class TopicsPercentage {
 
-    private static File[] getListFiles(File pFolder){
-        File[] listOfFiles = pFolder.listFiles();
-        for(int i = 0; i < listOfFiles.length; i++){
-            if(listOfFiles[i].isFile()){
-                System.out.println("File " + listOfFiles[i].getName());
-            } else if (listOfFiles[i].isDirectory()){
-                System.out.println("Directory " + listOfFiles[i].getName());
-            }
-        }
-        return listOfFiles;
-    }
-    
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        // Da aggiungere dopo
-        File folder = new File("/Users/sciroppina/NetBeansProjects/naturalness/FSE_projects/java/prova/");
-        File[] listFiles = getListFiles(folder);
         
-        int id_method = 1;
-        for(int i = 0; i < listFiles.length; i++){
-            System.out.println(listFiles[i].getPath());
-            File prova = new File(listFiles[i].getPath());
-            Analyzer a = new Analyzer();
-            id_method = a.start(prova, id_method);
-            
-        }    
-        /*File prova = new File("/Users/sciroppina/NetBeansProjects/naturalness/FSE_projects/java/prova/A3CThreadDiscrete.java");
+//        File prova = new File("/Users/Salvatore/Documents/UniMol/Dottorato/2018-2019/FSE/FSE_projects/java/deeplearning4j-master/AbstractCache.java");
+//        File prova = new File("/Users/Salvatore/Documents/UniMol/Dottorato/2018-2019/FSE/FSE_projects/java/HikariCP-dev/ProxyFactory.java");
         Analyzer a = new Analyzer();
-        a.start(prova);*/
+//        a.start(prova);
+        
+        File projects_dir = new File("/Users/Salvatore/Documents/UniMol/Dottorato/2018-2019/FSE/FSE_projects/java");
+        for(File project : projects_dir.listFiles()){
+            if(!project.isHidden()){
+                for(File java_class : project.listFiles()){
+                    if(!java_class.isHidden()){
+                        a.start(java_class);
+                    }
+                }
+            }
+        }
+
     }
-    
-    
 }

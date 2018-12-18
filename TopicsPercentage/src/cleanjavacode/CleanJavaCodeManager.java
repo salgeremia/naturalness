@@ -84,14 +84,14 @@ public class CleanJavaCodeManager {
     public ArrayList<String> getWordClassJava(String pMethod) throws FileNotFoundException, IOException {
 
         ArrayList<String> identifiersForFile = new ArrayList<String>();
-        System.out.println("\nmethod: " + pMethod);
+//        System.out.println("\nmethod: " + pMethod);
         pMethod = pMethod.replaceAll("[a-zA-Z_][a-zA-Z_0-9]*\\s*\\(", " ");
-        System.out.println("CANCELLAZIONE METODO");
-        System.out.println("method: " + pMethod);
+//        System.out.println("CANCELLAZIONE METODO");
+//        System.out.println("method: " + pMethod);
         pMethod = pMethod.replaceAll("[\\r\\n\\s]+", " ");
-        System.out.println("CANCELLAZIONE SPAZI");
-        System.out.println("method: " + pMethod);
-        System.out.println("STAMPA KEYWORDS");
+//        System.out.println("CANCELLAZIONE SPAZI");
+//        System.out.println("method: " + pMethod);
+//        System.out.println("STAMPA KEYWORDS");
         String[] keywords = jca.getKeywordsFromSource(pMethod);
         for (int j = 0; j < keywords.length; j++) {
             //System.out.println(j + ": " + keywords[j]);
@@ -105,7 +105,7 @@ public class CleanJavaCodeManager {
         }
 
         for (int j = 0; j < identifiersForFile.size(); j++) {
-            System.out.println(identifiersForFile.get(j));
+//            System.out.println(identifiersForFile.get(j));
         }
         
         return identifiersForFile;
