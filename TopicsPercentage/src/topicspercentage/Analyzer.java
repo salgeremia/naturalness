@@ -71,8 +71,9 @@ public class Analyzer {
                     parameters_map = new HashMap<>();
                     method_var_map = new HashMap<>();
                     parameters_map = get_parameters(m);
-                    this.method_cleaned = preprocessing(m.selectFirst("block"));
-                    method_var_map = get_method_var(m);
+                    this.method_cleaned = m.selectFirst("block");
+                    method_var_map = get_method_var(this.method_cleaned);
+                    this.method_cleaned = preprocessing(this.method_cleaned);
                     
                     
                     
