@@ -1,6 +1,8 @@
 package cleanjavacode;
 
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import cleanjavacode.CodeAnalyzer;
 import util.Utils;
@@ -17,21 +19,18 @@ public class FilterManager {
 	 */
 	public static String applyNonWordFilter(String pSource) {
 		//String onlyWords = pSource.replaceAll("[^\\p{L}\\p{Nd}\\_]", " ");
-		System.out.println("*****SCRIPT SIMONE*****");
-                    System.out.println(pSource);
                 
-                System.out.println("*****SCRIPT SIMONE*****");
-                String onlyWords = workaroundNonWordFilter(pSource);
-                System.out.println("*****SCRIPT SIMONE*****");
-                System.out.println(onlyWords);
-                String prova = FilterManager.applyMultipleSpacesFilter(onlyWords);
-                System.out.println(prova);
-                System.out.println(prova.replaceAll("\\d", ""));
-                System.out.println(FilterManager.applyMultipleSpacesFilter(onlyWords).replaceAll("\\d", ""));
-                
-                System.out.println("*****SCRIPT SIMONE*****");
-                //return FilterManager.applyMultipleSpacesFilter(onlyWords).replaceAll("\\d", "");
-		return FilterManager.applyMultipleSpacesFilter(onlyWords);
+//                 String onlyWords = workaroundNonWordFilter(pSource);
+//                 FilterManager.applyMultipleSpacesFilter(onlyWords).replaceAll("[^A-Za-z_$]\\d", " ");
+		Pattern tokenDetectorPattern = Pattern.compile("([A-Za-z_$][A-Za-z_$0-9]*)");
+		Matcher matcher = tokenDetectorPattern.matcher(pSource);
+
+		String resultString = "";
+		while (matcher.find()) {
+			resultString += matcher.group() + " ";
+		}
+
+		return resultString.trim();
 	}
 	
 	/**
