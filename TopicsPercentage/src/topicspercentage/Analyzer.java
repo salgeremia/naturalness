@@ -40,6 +40,7 @@ public class Analyzer {
     private Map<String, String> instance_var_map;
     private Map<String, String> parameters_map;
     private Map<String, String> method_var_map;
+    private Element method_cleaned;
     
     public void start(File java_file) {
         try {
@@ -65,13 +66,16 @@ public class Analyzer {
 
                 for (Element m : methods) {
                     unit = unit + 1;
+                    
                     System.out.println("\nI'm into the method number " + unit);
                     parameters_map = new HashMap<>();
                     method_var_map = new HashMap<>();
                     parameters_map = get_parameters(m);
+                    this.method_cleaned = preprocessing(m.selectFirst("block"));
                     method_var_map = get_method_var(m);
-                    Element method_cleaned = preprocessing(m.selectFirst("block"));
-
+                    
+                    
+                    
                     System.out.println("VAR INS: " + instance_var_map);
                     System.out.println("VAR PAR: " + parameters_map);
                     System.out.println("VAR LOC: " + method_var_map);
@@ -465,8 +469,9 @@ public class Analyzer {
         Elements decl = block.getElementsByTag("decl_stmt");
         for (Element e : decl) {
             Element var_type_element = e.select("decl > type > name").first();
-            String var_name = e.select("decl > type").first().nextElementSibling().text();
+            Element var_name_element = e.select("decl > type").first().nextElementSibling();
             String var_type;
+            String var_name = var_name_element.text();
             if (var_type_element.children().isEmpty()) {
                 var_type = var_type_element.text();
             } else {
@@ -488,6 +493,9 @@ public class Analyzer {
                 if (!method_map.get(var_name).equals(var_type)){
                     System.err.println("\nTYPE CHANGE: " + var_name + " --- " + 
                                         method_map.get(var_name) + " -> " + var_type);
+                } else {
+                    var_name_element.remove();
+                    var_type_element.remove();
                 }
             }
             method_map.put(var_name, var_type);
