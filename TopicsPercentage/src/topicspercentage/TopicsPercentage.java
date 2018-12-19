@@ -28,7 +28,7 @@ public class TopicsPercentage {
         Analyzer a = new Analyzer();
 //        a.start(prova);
         
-        File projects_dir = new File("/Users/Salvatore/Documents/UniMol/Dottorato/2018-2019/FSE/FSE_projects/java");
+        File projects_dir = new File("/Users/sciroppina/NetBeansProjects/naturalness/FSE_projects/java");
         for(File project : projects_dir.listFiles()){
             if(!project.isHidden()){
                 for(File java_class : project.listFiles()){

@@ -15,8 +15,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
@@ -33,9 +35,10 @@ import org.jsoup.select.Elements;
 public class Analyzer {
 
     private static final String SRCML_PATH = "/usr/local/bin/srcml";
-    private static final File DATA_DIR = new File("/Users/Salvatore/Documents/UniMol/Dottorato/2018-2019/FSE/FSE_projects");
-    private static final File TOPICS_DIR = new File("/Users/Salvatore/Documents/UniMol/Dottorato/2018-2019/FSE/FSE_projects/api-list");
+    private static final File DATA_DIR = new File("/Users/sciroppina/NetBeansProjects/naturalness/FSE_projects");
+    private static final File TOPICS_DIR = new File("/Users/sciroppina/NetBeansProjects/naturalness/FSE_projects/api-list");
     private static final String[] TOPICS = {"collections", "files", "gui", "jdbc", "reflection", "servlet", "socket", "thread"};
+    private static final String[] PRIMITIVE_DATA_TYPES = {"byte", "short", "int", "long", "float", "double", "char", "String", "boolean"};
 
     public void start(File java_file) {
         try {
@@ -63,15 +66,19 @@ public class Analyzer {
                     System.out.println("\nI'm into the method number " + unit);
                     Map<String, String> parameters_map = get_parameters(m);
                     Map<String, String> method_var_map = get_method_var(m);
-                    Element method_cleaned = preprocessing(m);
-                    
+                    Element method_cleaned = preprocessing(m.selectFirst("block"));
+
                     System.out.println("VAR INS: " + instance_var_map);
                     System.out.println("VAR PAR: " + parameters_map);
                     System.out.println("VAR LOC: " + method_var_map);
 
+                    instance_var_map = remove_primitive_data_types(instance_var_map);
+                    parameters_map = remove_primitive_data_types(parameters_map);
+                    method_var_map = remove_primitive_data_types(method_var_map);
+
                     CleanJavaCodeManager cm = new CleanJavaCodeManager();
                     ArrayList<String> tokens = cm.getWordClassJava(method_cleaned.text());
-                    
+
                     System.out.println("tokens: " + tokens);
 
                     if (!tokens.isEmpty()) {
@@ -80,22 +87,18 @@ public class Analyzer {
                         Map<String, String> token_topic = new HashMap<>();
                         for (String t : tokens) {
                             String candidate_type = null;
-                            
+
                             if (method_var_map.containsKey(t)) {
                                 candidate_type = method_var_map.get(t);
 //                                System.out.println(t + " is method var.");
-                            } else {
-                                if (parameters_map.containsKey(t)) {
-                                    candidate_type = parameters_map.get(t);
+                            } else if (parameters_map.containsKey(t)) {
+                                candidate_type = parameters_map.get(t);
 //                                    System.out.println(t + " is parameter var.");
-                                } else {
-                                    if (instance_var_map.containsKey(t)) {
-                                    candidate_type = instance_var_map.get(t);
+                            } else if (instance_var_map.containsKey(t)) {
+                                candidate_type = instance_var_map.get(t);
 //                                    System.out.println(t + " is instance var.");
-                                    }
-                                }
                             }
-                             
+
                             if (candidate_type == null) {
                                 token_count.remove(t);
                             } else {
@@ -124,30 +127,36 @@ public class Analyzer {
                                 } else {
                                     occurences[index] = 0;
                                 }
-                            } else System.out.println(" -> NO");
+                            } else {
+                                System.out.println(" -> NO");
+                            }
                         }
                         int others;
                         if (sum(occurences) != 0) {
                             System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
                             others = all_token - sum(occurences);
-                            
+
                             File snippet = create_snippet(methods_file, unit);
                             int loc = get_loc(snippet);
-                            File results = new File(DATA_DIR + "/results.txt");
+                            File resultsPercentage = new File(DATA_DIR + "/resultsPercentage.txt");
+                            File resultsOccurrences = new File(DATA_DIR + "/resultsOccurrences.txt");
+                            String file_path = snippet.getParentFile().getName() + "_" + snippet.getName();
+                            System.out.print(file_path + "  ");
+                            for (int o = 0; o < occurences.length; o++) {
+                                System.out.print(occurences[o] + "  ");
+                            }
+                            System.out.println(others + "  " + loc + "\t" + all_token);
+                            System.out.print(file_path + "  ");
+                            for (int o = 0; o < occurences.length; o++) {
+                                System.out.print(((double) occurences[o] * 100 / all_token) + "  ");
+                            }
+                            System.out.print(((double) others * 100 / all_token) + "  " + loc + "\t" + all_token + "\n\n");
 
-String file_path = snippet.getParentFile().getName() + "_" + snippet.getName();                            
-System.out.print(file_path + "  ");
-for (int o = 0; o < occurences.length; o++){
-    System.out.print(occurences[o] + "  ");
-}System.out.println(others + "  " + loc + "\t" + all_token);
-System.out.print(file_path + "  ");
-for (int o = 0; o < occurences.length; o++){
-    System.out.print(((double)occurences[o]*100/all_token) + "  ");
-}System.out.print(((double)others*100/all_token) + "  " + loc + "\t" + all_token + "\n\n");
-
-                            write_results(snippet, occurences, others, loc, all_token, results);
+                            write_results(snippet, occurences, others, loc, all_token, resultsPercentage, resultsOccurrences);
                         }
-                    } else System.out.println("...NO tokens, I'm sorry!");
+                    } else {
+                        System.out.println("...NO tokens, I'm sorry!");
+                    }
                 }
 
             }
@@ -165,14 +174,20 @@ for (int o = 0; o < occurences.length; o++){
         return p;
     }
     
-    private void write_results(File snippet, int[] occurences, int others, int loc, int all_token, File output){
+    private void write_results(File snippet, int[] occurences, int others, int loc, int all_token, File output1, File output2){
         try {
             boolean header = false;
-            if (!output.exists()){
+            boolean header1 = false;
+            if (!output1.exists()){
                 header = true;
             }
-            FileWriter fw = new FileWriter(output.getAbsolutePath(), true);
+            if (!output2.exists()){
+                header1 = true;
+            }
+            FileWriter fw = new FileWriter(output1.getAbsolutePath(), true);
+            FileWriter fw1 = new FileWriter(output2.getAbsolutePath(), true);
             BufferedWriter bw = new BufferedWriter(fw);
+            BufferedWriter bw1 = new BufferedWriter(fw1);
             if(header){
                 bw.write("name,");
                 for(String t : TOPICS){
@@ -180,17 +195,32 @@ for (int o = 0; o < occurences.length; o++){
                 }
                 bw.write("other,loc");
             }
+            if(header1){
+            
+                bw1.write("name,");
+                for(String t : TOPICS){
+            
+                    bw1.write(t + ",");
+                }
+            
+                bw1.write("other,loc");
+            }
             String file_path = snippet.getParentFile().getName() + "_" + snippet.getName();
             bw.write("\n" + file_path + ",");
+            bw1.write("\n" + file_path + ",");
             double value;
             for (int i = 0; i < occurences.length; i++){
                 value = (double)occurences[i]*100/all_token;
                 bw.write(value + ",");
+                bw1.write(occurences[i] + ",");
             }
             value = (double)others*100/all_token;
             bw.write(value + "," + loc);
+            bw1.write(others + "," + loc);
             bw.flush();
+            bw1.flush();
             bw.close();
+            bw1.close();
         } catch (IOException ex) {
             Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -394,22 +424,27 @@ for (int o = 0; o < occurences.length; o++){
     }
 
     private Map<String, String> get_parameters(Element method) {
+        System.out.println(method.text());
         Map<String, String> parameters_map = new HashMap<>();
         Element decl = method.getElementsByTag("parameter_list").first();
-        if (!decl.children().isEmpty()) {
-            Elements parameters = decl.select("parameter"); System.out.println(parameters.size());
-            for (Element p : parameters) {
-                Element type_elem = p.select("decl > type > name").first();
-                String type_name;
-                if (type_elem.children().isEmpty()) {
-                    type_name = type_elem.text();
-                } else {
-                    type_name = type_elem.select("name > name").first().text();
+        if (!decl.attr("type").equals("generic")) {
+            if (!decl.children().isEmpty()) {
+                Elements parameters = decl.select("parameter");
+                System.out.println(parameters.size());
+                for (Element p : parameters) {
+                    Element type_elem = p.select("decl > type > name").first();
+                    String type_name;
+                    if (type_elem.children().isEmpty()) {
+                        type_name = type_elem.text();
+                    } else {
+                        type_name = type_elem.select("name > name").first().text();
+                    }
+                    String var_name = p.select("decl > name").first().text();
+                    parameters_map.put(var_name, type_name);
                 }
-                String var_name = p.select("decl > name").first().text();
-                parameters_map.put(var_name, type_name);
             }
         }
+
 //        parameters_map.forEach((type, name) -> System.out.println(type + " " + name));
         return parameters_map;
     }
@@ -454,6 +489,21 @@ for (int o = 0; o < occurences.length; o++){
             Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
         }
         return lines;
+    }
+    
+    private Map<String, String> remove_primitive_data_types(Map<String, String> map_variable) {
+        ArrayList<String> keyDeleted = new ArrayList<String>();
+        for (String key : map_variable.keySet()) {
+            for (int i = 0; i < PRIMITIVE_DATA_TYPES.length; i++) {
+                if (map_variable.get(key).equals(PRIMITIVE_DATA_TYPES[i])) {
+                    keyDeleted.add(key);
+                }
+            }
+        }
+        for (int i = 0; i < keyDeleted.size(); i++) {
+            map_variable.remove(keyDeleted.get(i));
+        }
+        return map_variable;
     }
 
     public static void main(String[] args) throws IOException {

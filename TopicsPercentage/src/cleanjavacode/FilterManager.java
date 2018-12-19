@@ -17,8 +17,21 @@ public class FilterManager {
 	 */
 	public static String applyNonWordFilter(String pSource) {
 		//String onlyWords = pSource.replaceAll("[^\\p{L}\\p{Nd}\\_]", " ");
-		String onlyWords = workaroundNonWordFilter(pSource);
-		return FilterManager.applyMultipleSpacesFilter(onlyWords).replaceAll("\\d", "");
+		System.out.println("*****SCRIPT SIMONE*****");
+                    System.out.println(pSource);
+                
+                System.out.println("*****SCRIPT SIMONE*****");
+                String onlyWords = workaroundNonWordFilter(pSource);
+                System.out.println("*****SCRIPT SIMONE*****");
+                System.out.println(onlyWords);
+                String prova = FilterManager.applyMultipleSpacesFilter(onlyWords);
+                System.out.println(prova);
+                System.out.println(prova.replaceAll("\\d", ""));
+                System.out.println(FilterManager.applyMultipleSpacesFilter(onlyWords).replaceAll("\\d", ""));
+                
+                System.out.println("*****SCRIPT SIMONE*****");
+                //return FilterManager.applyMultipleSpacesFilter(onlyWords).replaceAll("\\d", "");
+		return FilterManager.applyMultipleSpacesFilter(onlyWords);
 	}
 	
 	/**
