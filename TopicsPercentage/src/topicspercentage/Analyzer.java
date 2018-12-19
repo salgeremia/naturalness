@@ -15,10 +15,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
@@ -39,7 +37,10 @@ public class Analyzer {
     private static final File TOPICS_DIR = new File("/Users/sciroppina/NetBeansProjects/naturalness/FSE_projects/api-list");
     private static final String[] TOPICS = {"collections", "files", "gui", "jdbc", "reflection", "servlet", "socket", "thread"};
     private static final String[] PRIMITIVE_DATA_TYPES = {"byte", "short", "int", "long", "float", "double", "char", "String", "boolean"};
-
+    private Map<String, String> instance_var_map;
+    private Map<String, String> parameters_map;
+    private Map<String, String> method_var_map;
+    
     public void start(File java_file) {
         try {
             File temp_xml = new File(DATA_DIR + "/temp_class.xml");
@@ -53,7 +54,8 @@ public class Analyzer {
                 for (String path : apis_path) {
                     imports_map.put(get_type(path), path);
                 }
-                Map<String, String> instance_var_map = get_var_instance(temp_xml);
+                instance_var_map = new HashMap<>();
+                instance_var_map = get_var_instance(temp_xml);
                 File methods_file = get_extractor_output(java_file);
                 methods_extractor(temp_xml, methods_file);
                 doc = Jsoup.parse(methods_file, "UTF-8");
@@ -64,8 +66,10 @@ public class Analyzer {
                 for (Element m : methods) {
                     unit = unit + 1;
                     System.out.println("\nI'm into the method number " + unit);
-                    Map<String, String> parameters_map = get_parameters(m);
-                    Map<String, String> method_var_map = get_method_var(m);
+                    parameters_map = new HashMap<>();
+                    method_var_map = new HashMap<>();
+                    parameters_map = get_parameters(m);
+                    method_var_map = get_method_var(m);
                     Element method_cleaned = preprocessing(m.selectFirst("block"));
 
                     System.out.println("VAR INS: " + instance_var_map);
@@ -166,13 +170,13 @@ public class Analyzer {
         }
     }
     
-    private double[] calculate_percentage(int[] topics_presence, int all_token){
-        double[] p = new double[topics_presence.length];
-        for(int i = 0; i < topics_presence.length; i++){
-            p[i] = topics_presence[i] * 100 / all_token;
-        }
-        return p;
-    }
+//    private double[] calculate_percentage(int[] topics_presence, int all_token){
+//        double[] p = new double[topics_presence.length];
+//        for(int i = 0; i < topics_presence.length; i++){
+//            p[i] = topics_presence[i] * 100 / all_token;
+//        }
+//        return p;
+//    }
     
     private void write_results(File snippet, int[] occurences, int others, int loc, int all_token, File output1, File output2){
         try {
@@ -425,7 +429,7 @@ public class Analyzer {
 
     private Map<String, String> get_parameters(Element method) {
         System.out.println(method.text());
-        Map<String, String> parameters_map = new HashMap<>();
+        Map<String, String> par_map = new HashMap<>();
         Element decl = method.getElementsByTag("parameter_list").first();
         if (!decl.attr("type").equals("generic")) {
             if (!decl.children().isEmpty()) {
@@ -440,13 +444,19 @@ public class Analyzer {
                         type_name = type_elem.select("name > name").first().text();
                     }
                     String var_name = p.select("decl > name").first().text();
-                    parameters_map.put(var_name, type_name);
+                    if (this.instance_var_map.containsKey(var_name)){
+                        if (!this.instance_var_map.get(var_name).equals(type_name)){
+                            System.err.println("\nTYPE CHANGE: " + var_name + " --- " + 
+                                                this.instance_var_map.get(var_name) + " -> " + type_name);
+                        }
+                    }
+                    par_map.put(var_name, type_name);
                 }
             }
         }
 
-//        parameters_map.forEach((type, name) -> System.out.println(type + " " + name));
-        return parameters_map;
+//        par_map.forEach((type, name) -> System.out.println(type + " " + name));
+        return par_map;
     }
 
     private Map<String, String> get_method_var(Element method) {
@@ -461,6 +471,24 @@ public class Analyzer {
                 var_type = var_type_element.text();
             } else {
                 var_type = var_type_element.child(0).text();
+            }
+            if (this.parameters_map.containsKey(var_name)){
+                if (!this.parameters_map.get(var_name).equals(var_type)){
+                    System.err.println("\nTYPE CHANGE: " + var_name + " --- " + 
+                                                this.parameters_map.get(var_name) + " -> " + var_type);
+                }
+            }
+            if (this.instance_var_map.containsKey(var_name)){
+                if (!this.instance_var_map.get(var_name).equals(var_type)){
+                    System.err.println("\nTYPE CHANGE: " + var_name + " --- " + 
+                                                this.instance_var_map.get(var_name) + " -> " + var_type);
+                }
+            }
+            if (method_map.containsKey(var_name)){
+                if (!method_map.get(var_name).equals(var_type)){
+                    System.err.println("\nTYPE CHANGE: " + var_name + " --- " + 
+                                        method_map.get(var_name) + " -> " + var_type);
+                }
             }
             method_map.put(var_name, var_type);
         }
@@ -492,7 +520,7 @@ public class Analyzer {
     }
     
     private Map<String, String> remove_primitive_data_types(Map<String, String> map_variable) {
-        ArrayList<String> keyDeleted = new ArrayList<String>();
+        ArrayList<String> keyDeleted = new ArrayList<>();
         for (String key : map_variable.keySet()) {
             for (int i = 0; i < PRIMITIVE_DATA_TYPES.length; i++) {
                 if (map_variable.get(key).equals(PRIMITIVE_DATA_TYPES[i])) {
